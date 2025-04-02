@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Add New Recipient</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.csrf_token }}
+                    <div class="mb-3">
+                        {{ form.name.label(class="form-label") }}
+                        {{ form.name(class="form-control") }}
+                        {% if form.name.errors %}
+                            {% for error in form.name.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.age.label(class="form-label") }}
+                        {{ form.age(class="form-control") }}
+                        {% if form.age.errors %}
+                            {% for error in form.age.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.blood_group.label(class="form-label") }}
+                        {{ form.blood_group(class="form-select") }}
+                        {% if form.blood_group.errors %}
+                            {% for error in form.blood_group.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.contact_number.label(class="form-label") }}
+                        {{ form.contact_number(class="form-control") }}
+                        {% if form.contact_number.errors %}
+                            {% for error in form.contact_number.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.email.label(class="form-label") }}
+                        {{ form.email(class="form-control") }}
+                        {% if form.email.errors %}
+                            {% for error in form.email.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.address.label(class="form-label") }}
+                        {{ form.address(class="form-control", rows=3) }}
+                        {% if form.address.errors %}
+                            {% for error in form.address.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.urgency_level.label(class="form-label") }}
+                        {{ form.urgency_level(class="form-select") }}
+                        {% if form.urgency_level.errors %}
+                            {% for error in form.urgency_level.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.units_needed.label(class="form-label") }}
+                        {{ form.units_needed(class="form-control") }}
+                        {% if form.units_needed.errors %}
+                            {% for error in form.units_needed.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    {{ form.submit(class="btn btn-primary w-100") }}
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Blood Requests</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Age</th>
+                                <th>Blood Group</th>
+                                <th>Contact</th>
+                                <th>Email</th>
+                                <th>Address</th>
+                                <th>Urgency</th>
+                                <th>Units</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for recipient in recipients %}
+                            <tr>
+                                <td>{{ recipient.name }}</td>
+                                <td>{{ recipient.age }}</td>
+                                <td>{{ recipient.blood_group }}</td>
+                                <td>{{ recipient.contact_number }}</td>
+                                <td>{{ recipient.email }}</td>
+                                <td>{{ recipient.address }}</td>
+                                <td>
+                                    <span class="badge {% if recipient.urgency_level == 'High' %}bg-danger{% elif recipient.urgency_level == 'Medium' %}bg-warning{% else %}bg-info{% endif %}">
+                                        {{ recipient.urgency_level }}
+                                    </span>
+                                </td>
+                                <td>{{ recipient.units_needed }}</td>
+                                <td>
+                                    <span class="badge {% if recipient.status == 'Pending' %}bg-warning{% elif recipient.status == 'Fulfilled' %}bg-success{% else %}bg-danger{% endif %}">
+                                        {{ recipient.status }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

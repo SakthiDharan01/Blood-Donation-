@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Dashboard Overview</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Blood Inventory</h5>
+                                <p class="card-text display-6">{{ inventory|length }}</p>
+                                <p class="card-text">Total Blood Types</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Emergency Requests</h5>
+                                <p class="card-text display-6">{{ emergency_requests|length }}</p>
+                                <p class="card-text">Pending Requests</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Quick Actions</h5>
+                                <div class="d-grid gap-2">
+                                    <a href="{{ url_for('donors') }}" class="btn btn-primary">Add Donor</a>
+                                    <a href="{{ url_for('recipients') }}" class="btn btn-primary">Add Recipient</a>
+                                    <a href="{{ url_for('inventory') }}" class="btn btn-primary">View Inventory</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Current Blood Inventory</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Blood Bank</th>
+                                <th>Blood Group</th>
+                                <th>Quantity</th>
+                                <th>Last Updated</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in inventory %}
+                            <tr>
+                                <td>{{ item.bank_name }}</td>
+                                <td>{{ item.blood_group }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>{{ item.last_updated.strftime('%Y-%m-%d %H:%M') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Emergency Requests</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Blood Group</th>
+                                <th>Hospital</th>
+                                <th>Urgency</th>
+                                <th>Units</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for request in emergency_requests %}
+                            <tr>
+                                <td>{{ request.name }}</td>
+                                <td>{{ request.blood_group }}</td>
+                                <td>{{ request.hospital_name }}</td>
+                                <td>
+                                    <span class="badge {% if request.urgency_level == 'CRITICAL' %}bg-danger
+                                                      {% elif request.urgency_level == 'HIGH' %}bg-warning
+                                                      {% elif request.urgency_level == 'MEDIUM' %}bg-info
+                                                      {% else %}bg-secondary{% endif %}">
+                                        {{ request.urgency_level }}
+                                    </span>
+                                </td>
+                                <td>{{ request.units_needed }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

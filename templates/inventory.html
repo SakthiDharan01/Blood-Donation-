@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Blood Inventory</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <form method="GET" class="d-flex">
+                            <select name="blood_group" class="form-select me-2">
+                                <option value="">All Blood Groups</option>
+                                <option value="A+" {% if request.args.get('blood_group') == 'A+' %}selected{% endif %}>A+</option>
+                                <option value="A-" {% if request.args.get('blood_group') == 'A-' %}selected{% endif %}>A-</option>
+                                <option value="B+" {% if request.args.get('blood_group') == 'B+' %}selected{% endif %}>B+</option>
+                                <option value="B-" {% if request.args.get('blood_group') == 'B-' %}selected{% endif %}>B-</option>
+                                <option value="O+" {% if request.args.get('blood_group') == 'O+' %}selected{% endif %}>O+</option>
+                                <option value="O-" {% if request.args.get('blood_group') == 'O-' %}selected{% endif %}>O-</option>
+                                <option value="AB+" {% if request.args.get('blood_group') == 'AB+' %}selected{% endif %}>AB+</option>
+                                <option value="AB-" {% if request.args.get('blood_group') == 'AB-' %}selected{% endif %}>AB-</option>
+                            </select>
+                            <button type="submit" class="btn btn-primary">Filter</button>
+                        </form>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="d-flex justify-content-end">
+                            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addInventoryModal">
+                                Add Blood Units
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Blood Bank</th>
+                                <th>Blood Group</th>
+                                <th>Quantity (Units)</th>
+                                <th>Last Updated</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in inventory %}
+                            <tr>
+                                <td>{{ item.blood_bank_name }}</td>
+                                <td>{{ item.blood_group }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>{{ item.last_updated.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                <td>
+                                    <span class="badge {% if item.quantity > 10 %}bg-success{% elif item.quantity > 5 %}bg-warning{% else %}bg-danger{% endif %}">
+                                        {{ "Sufficient" if item.quantity > 10 else "Low" if item.quantity > 5 else "Critical" }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" onclick="editInventory({{ item.inventory_id }})">Edit</button>
+                                    <button class="btn btn-sm btn-danger" onclick="deleteInventory({{ item.inventory_id }})">Delete</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Inventory Modal -->
+<div class="modal fade" id="addInventoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Blood Units</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="{{ url_for('add_inventory') }}">
+                    {{ form.csrf_token }}
+                    <div class="mb-3">
+                        {{ form.bank_id.label(class="form-label") }}
+                        {{ form.bank_id(class="form-select") }}
+                        {% if form.bank_id.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.bank_id.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.blood_group.label(class="form-label") }}
+                        {{ form.blood_group(class="form-select") }}
+                        {% if form.blood_group.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.blood_group.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.quantity.label(class="form-label") }}
+                        {{ form.quantity(class="form-control") }}
+                        {% if form.quantity.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.quantity.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Inventory Modal -->
+<div class="modal fade" id="editInventoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Blood Units</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" id="editInventoryForm">
+                    {{ form.csrf_token }}
+                    <div class="mb-3">
+                        {{ form.bank_id.label(class="form-label") }}
+                        {{ form.bank_id(class="form-select") }}
+                        {% if form.bank_id.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.bank_id.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.blood_group.label(class="form-label") }}
+                        {{ form.blood_group(class="form-select") }}
+                        {% if form.blood_group.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.blood_group.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.quantity.label(class="form-label") }}
+                        {{ form.quantity(class="form-control") }}
+                        {% if form.quantity.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.quantity.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function editInventory(id) {
+    fetch(`/api/inventory/${id}`)
+        .then(response => response.json())
+        .then(data => {
+            const form = document.getElementById('editInventoryForm');
+            form.action = `/inventory/${id}/edit`;
+            form.querySelector('[name="bank_id"]').value = data.bank_id;
+            form.querySelector('[name="blood_group"]').value = data.blood_group;
+            form.querySelector('[name="quantity"]').value = data.quantity;
+            new bootstrap.Modal(document.getElementById('editInventoryModal')).show();
+        });
+}
+
+function deleteInventory(id) {
+    if (confirm('Are you sure you want to delete this inventory item?')) {
+        fetch(`/inventory/${id}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name="csrf_token"]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error deleting inventory item: ' + data.error);
+            }
+        });
+    }
+}
+</script>
+{% endblock %} 

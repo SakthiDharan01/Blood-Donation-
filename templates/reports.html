@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <!-- Summary Cards -->
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Total Donors</h5>
+                <h2 class="card-text">{{ stats.total_donors }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Total Recipients</h5>
+                <h2 class="card-text">{{ stats.total_recipients }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Total Blood Units</h5>
+                <h2 class="card-text">{{ stats.total_blood_units }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Pending Requests</h5>
+                <h2 class="card-text">{{ stats.pending_requests }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Blood Group Distribution -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Blood Group Distribution</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="bloodGroupChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Donations -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Monthly Donations</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="monthlyDonationsChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Recent Transactions</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Blood Group</th>
+                                <th>Units</th>
+                                <th>Blood Bank</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in recent_transactions %}
+                            <tr>
+                                <td>{{ transaction.date.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                <td>{{ transaction.type }}</td>
+                                <td>{{ transaction.blood_group }}</td>
+                                <td>{{ transaction.units }}</td>
+                                <td>{{ transaction.blood_bank_name }}</td>
+                                <td>
+                                    <span class="badge {% if transaction.status == 'Completed' %}bg-success{% elif transaction.status == 'Pending' %}bg-warning{% else %}bg-danger{% endif %}">
+                                        {{ transaction.status }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Blood Bank Statistics -->
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Blood Bank Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Blood Bank</th>
+                                <th>Total Units</th>
+                                <th>Available Units</th>
+                                <th>Donations This Month</th>
+                                <th>Distributions This Month</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for bank in blood_bank_stats %}
+                            <tr>
+                                <td>{{ bank.name }}</td>
+                                <td>{{ bank.total_units }}</td>
+                                <td>{{ bank.available_units }}</td>
+                                <td>{{ bank.donations_this_month }}</td>
+                                <td>{{ bank.distributions_this_month }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Blood Group Distribution Chart
+const bloodGroupCtx = document.getElementById('bloodGroupChart').getContext('2d');
+new Chart(bloodGroupCtx, {
+    type: 'pie',
+    data: {
+        labels: {{ blood_group_labels | tojson }},
+        datasets: [{
+            data: {{ blood_group_data | tojson }},
+            backgroundColor: [
+                '#FF6384',
+                '#36A2EB',
+                '#FFCE56',
+                '#4BC0C0',
+                '#9966FF',
+                '#FF9F40',
+                '#FF6384',
+                '#36A2EB'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'right'
+            }
+        }
+    }
+});
+
+// Monthly Donations Chart
+const monthlyDonationsCtx = document.getElementById('monthlyDonationsChart').getContext('2d');
+new Chart(monthlyDonationsCtx, {
+    type: 'line',
+    data: {
+        labels: {{ monthly_labels | tojson }},
+        datasets: [{
+            label: 'Donations',
+            data: {{ monthly_donations | tojson }},
+            borderColor: '#36A2EB',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+</script>
+{% endblock %} 
