@@ -7,13 +7,13 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 
-# Load environment variables
+
 load_dotenv()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
 
-# Database configuration
+
 db_config = {
     'host': os.getenv('DB_HOST', 'localhost'),
     'user': os.getenv('DB_USER', 'root'),
@@ -21,7 +21,7 @@ db_config = {
     'database': os.getenv('DB_NAME', 'blood_donation')
 }
 
-# Forms
+
 class DonorForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(min=2, max=100)])
     age = IntegerField('Age', validators=[DataRequired(), NumberRange(min=18, max=65)])
@@ -78,7 +78,7 @@ def index():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
-    # Get total counts
+    
     cursor.execute("SELECT COUNT(*) as total FROM donors")
     total_donors = cursor.fetchone()['total']
     
@@ -91,7 +91,7 @@ def index():
     cursor.execute("SELECT COUNT(*) as total FROM recipients WHERE status = 'PENDING'")
     pending_requests = cursor.fetchone()['total']
     
-    # Get current inventory
+   
     cursor.execute("""
         SELECT bb.name as blood_bank_name, bi.blood_group, bi.quantity, bi.last_updated
         FROM blood_inventory bi
@@ -100,7 +100,7 @@ def index():
     """)
     inventory = cursor.fetchall()
     
-    # Get emergency requests
+    
     cursor.execute("""
         SELECT name, blood_group, hospital_name as hospital, urgency_level, units_needed
         FROM recipients
@@ -237,11 +237,11 @@ def inventory():
     cursor.execute(query, params)
     inventory = cursor.fetchall()
     
-    # Get blood banks for the form
+   
     cursor.execute("SELECT * FROM blood_banks")
     blood_banks = cursor.fetchall()
     
-    # Update form choices
+    
     form.bank_id.choices = [(bank['bank_id'], bank['name']) for bank in blood_banks]
     
     cursor.close()
@@ -351,7 +351,7 @@ def reports():
     cursor.execute("SELECT COUNT(*) as total FROM recipients WHERE status = 'PENDING'")
     stats['pending_requests'] = cursor.fetchone()['total']
     
-    # Get blood group distribution
+   
     cursor.execute("""
         SELECT blood_group, COUNT(*) as count
         FROM donors
@@ -359,7 +359,6 @@ def reports():
     """)
     blood_group_data = cursor.fetchall()
     
-    # Get monthly donations
     cursor.execute("""
         SELECT DATE_FORMAT(transaction_date, '%Y-%m') as month, COUNT(*) as count
         FROM transactions
@@ -370,7 +369,7 @@ def reports():
     """)
     monthly_donations = cursor.fetchall()
     
-    # Get recent transactions
+    
     cursor.execute("""
         SELECT t.*, bb.name as blood_bank_name
         FROM transactions t
@@ -380,7 +379,7 @@ def reports():
     """)
     recent_transactions = cursor.fetchall()
     
-    # Get blood bank statistics
+    
     cursor.execute("""
         SELECT 
             bb.name,
