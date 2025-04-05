@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS blood_inventory (
 CREATE TABLE IF NOT EXISTS recipients (
     recipient_id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(100) NOT NULL,
+    age INT CHECK (age >= 0 AND age <= 120),
     blood_group ENUM('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-') NOT NULL,
     contact_number VARCHAR(15) NOT NULL,
     hospital_name VARCHAR(100) NOT NULL,

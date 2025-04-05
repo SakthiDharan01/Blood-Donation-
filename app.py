@@ -46,17 +46,15 @@ class RecipientForm(FlaskForm):
         ('AB+', 'AB+'), ('AB-', 'AB-')
     ])
     contact_number = StringField('Contact Number', validators=[DataRequired(), Length(min=10, max=15)])
-    email = StringField('Email', validators=[DataRequired(), Email()])
-    address = TextAreaField('Address', validators=[DataRequired()])
     hospital_name = StringField('Hospital Name', validators=[DataRequired(), Length(min=2, max=100)])
     hospital_address = TextAreaField('Hospital Address', validators=[DataRequired()])
+    units_needed = IntegerField('Units Needed', validators=[DataRequired(), NumberRange(min=1, max=10)])
     urgency_level = SelectField('Urgency Level', choices=[
         ('CRITICAL', 'Critical'),
         ('HIGH', 'High'),
         ('MEDIUM', 'Medium'),
         ('LOW', 'Low')
     ])
-    units_needed = IntegerField('Units Needed', validators=[DataRequired(), NumberRange(min=1, max=10)])
     submit = SubmitField('Add Recipient')
 
 class InventoryForm(FlaskForm):
@@ -66,9 +64,12 @@ class InventoryForm(FlaskForm):
         ('B+', 'B+'), ('B-', 'B-'),
         ('O+', 'O+'), ('O-', 'O-'),
         ('AB+', 'AB+'), ('AB-', 'AB-')
+    ], validators=[DataRequired()])
+    quantity = IntegerField('Quantity (Units)', validators=[
+        DataRequired(),
+        NumberRange(min=1, message='Quantity must be at least 1 unit')
     ])
-    quantity = IntegerField('Quantity', validators=[DataRequired(), NumberRange(min=1)])
-    submit = SubmitField('Add Blood Units')
+    submit = SubmitField('Add Units')
 
 def get_db_connection():
     return mysql.connector.connect(**db_config)
@@ -170,109 +171,152 @@ def donors():
 @app.route('/recipients', methods=['GET', 'POST'])
 def recipients():
     form = RecipientForm()
-    if form.validate_on_submit():
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        try:
-            cursor.execute("""
-                INSERT INTO recipients (name, age, blood_group, contact_number, email, address, 
-                                     hospital_name, hospital_address, urgency_level, units_needed, status)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """, (
-                form.name.data,
-                form.age.data,
-                form.blood_group.data,
-                form.contact_number.data,
-                form.email.data,
-                form.address.data,
-                form.hospital_name.data,
-                form.hospital_address.data,
-                form.urgency_level.data,
-                form.units_needed.data,
-                'PENDING'
-            ))
-            conn.commit()
-            flash('Recipient added successfully!', 'success')
-        except Exception as e:
-            flash(f'Error adding recipient: {str(e)}', 'error')
-        finally:
-            cursor.close()
-            conn.close()
-        
-        return redirect(url_for('recipients'))
-    
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM recipients ORDER BY created_at DESC")
+    
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            try:
+                # Insert the recipient data
+                cursor.execute("""
+                    INSERT INTO recipients (
+                        name, age, blood_group, contact_number, 
+                        hospital_name, hospital_address, units_needed, 
+                        urgency_level, status
+                    ) VALUES (
+                        %s, %s, %s, %s, %s, %s, %s, %s, 'PENDING'
+                    )
+                """, (
+                    form.name.data,
+                    form.age.data,
+                    form.blood_group.data,
+                    form.contact_number.data,
+                    form.hospital_name.data,
+                    form.hospital_address.data,
+                    form.units_needed.data,
+                    form.urgency_level.data
+                ))
+                conn.commit()
+                flash('Recipient added successfully!', 'success')
+                return redirect(url_for('recipients'))
+            except Exception as e:
+                flash(f'Error adding recipient: {str(e)}', 'error')
+                conn.rollback()
+        else:
+            flash('Please correct the errors in the form.', 'error')
+            for field, errors in form.errors.items():
+                for error in errors:
+                    flash(f'{field}: {error}', 'error')
+    
+    # Get filters
+    blood_group = request.args.get('blood_group')
+    urgency_level = request.args.get('urgency_level')
+    
+    # Build query for recipients
+    query = "SELECT * FROM recipients"
+    params = []
+    conditions = []
+    
+    if blood_group:
+        conditions.append("blood_group = %s")
+        params.append(blood_group)
+    
+    if urgency_level:
+        conditions.append("urgency_level = %s")
+        params.append(urgency_level)
+    
+    if conditions:
+        query += " WHERE " + " AND ".join(conditions)
+    
+    query += """
+        ORDER BY 
+            CASE urgency_level
+                WHEN 'CRITICAL' THEN 1
+                WHEN 'HIGH' THEN 2
+                WHEN 'MEDIUM' THEN 3
+                WHEN 'LOW' THEN 4
+            END,
+            created_at DESC
+    """
+    
+    cursor.execute(query, params)
     recipients = cursor.fetchall()
+    
     cursor.close()
     conn.close()
     
     return render_template('recipients.html', form=form, recipients=recipients)
 
-@app.route('/inventory')
+@app.route('/inventory', methods=['GET', 'POST'])
 def inventory():
     form = InventoryForm()
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
+    # Fetch blood banks for the form
+    cursor.execute("SELECT bank_id, name FROM blood_banks ORDER BY name")
+    blood_banks = cursor.fetchall()
+    form.bank_id.choices = [(bank['bank_id'], bank['name']) for bank in blood_banks]
+    
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            try:
+                # Check if inventory entry already exists for this bank and blood group
+                cursor.execute("""
+                    SELECT inventory_id, quantity 
+                    FROM blood_inventory 
+                    WHERE bank_id = %s AND blood_group = %s
+                """, (form.bank_id.data, form.blood_group.data))
+                existing = cursor.fetchone()
+                
+                if existing:
+                    # Update existing inventory
+                    cursor.execute("""
+                        UPDATE blood_inventory 
+                        SET quantity = quantity + %s, last_updated = NOW()
+                        WHERE inventory_id = %s
+                    """, (form.quantity.data, existing['inventory_id']))
+                else:
+                    # Insert new inventory
+                    cursor.execute("""
+                        INSERT INTO blood_inventory (bank_id, blood_group, quantity, last_updated)
+                        VALUES (%s, %s, %s, NOW())
+                    """, (form.bank_id.data, form.blood_group.data, form.quantity.data))
+                
+                conn.commit()
+                flash('Blood units added successfully!', 'success')
+                return redirect(url_for('inventory'))
+            except Exception as e:
+                flash(f'Error adding blood units: {str(e)}', 'error')
+                conn.rollback()
+        else:
+            flash('Please correct the errors in the form.', 'error')
+    
     # Get blood group filter
     blood_group = request.args.get('blood_group')
     
-    # Build query
+    # Build query for inventory
     query = """
-        SELECT bi.*, bb.name as blood_bank_name
-        FROM blood_inventory bi
-        JOIN blood_banks bb ON bi.bank_id = bb.bank_id
+        SELECT i.inventory_id, i.bank_id, bb.name as blood_bank_name, 
+               i.blood_group, i.quantity, i.last_updated
+        FROM blood_inventory i
+        JOIN blood_banks bb ON i.bank_id = bb.bank_id
     """
     params = []
     
     if blood_group:
-        query += " WHERE bi.blood_group = %s"
+        query += " WHERE i.blood_group = %s"
         params.append(blood_group)
     
-    query += " ORDER BY bi.last_updated DESC"
+    query += " ORDER BY bb.name, i.blood_group"
     
     cursor.execute(query, params)
     inventory = cursor.fetchall()
     
-    # Get blood banks for the form
-    cursor.execute("SELECT * FROM blood_banks")
-    blood_banks = cursor.fetchall()
-    
-    # Update form choices
-    form.bank_id.choices = [(bank['bank_id'], bank['name']) for bank in blood_banks]
-    
     cursor.close()
     conn.close()
     
-    return render_template('inventory.html', form=form, inventory=inventory, blood_banks=blood_banks)
-
-@app.route('/inventory/add', methods=['POST'])
-def add_inventory():
-    if request.method == 'POST':
-        bank_id = request.form.get('bank_id')
-        blood_group = request.form.get('blood_group')
-        quantity = request.form.get('quantity')
-        
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        try:
-            cursor.execute("""
-                INSERT INTO blood_inventory (bank_id, blood_group, quantity, last_updated)
-                VALUES (%s, %s, %s, NOW())
-            """, (bank_id, blood_group, quantity))
-            conn.commit()
-            flash('Blood units added successfully!', 'success')
-        except Exception as e:
-            flash(f'Error adding blood units: {str(e)}', 'error')
-        finally:
-            cursor.close()
-            conn.close()
-        
-        return redirect(url_for('inventory'))
+    return render_template('inventory.html', form=form, inventory=inventory)
 
 @app.route('/inventory/<int:id>/edit', methods=['POST'])
 def edit_inventory(id):

@@ -80,7 +80,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form method="POST" action="{{ url_for('add_inventory') }}">
+                <form method="POST" action="{{ url_for('inventory') }}">
                     {{ form.csrf_token }}
                     <div class="mb-3">
                         {{ form.bank_id.label(class="form-label") }}

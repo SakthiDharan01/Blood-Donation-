@@ -1,86 +1,89 @@
 import mysql.connector
 from mysql.connector import Error
-import os
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
 
 def setup_database():
     try:
         # Connect to MySQL server
-        connection = mysql.connector.connect(
-            host=os.getenv('DB_HOST', 'localhost'),
-            user=os.getenv('DB_USER', 'root'),
-            password=os.getenv('DB_PASSWORD', '')
+        conn = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="hello"  # Updated password
         )
-        
-        if connection.is_connected():
-            cursor = connection.cursor()
-            
-            # Create database if it doesn't exist
-            db_name = os.getenv('DB_NAME', 'blood_donation')
-            cursor.execute(f"CREATE DATABASE IF NOT EXISTS {db_name}")
-            print(f"Database '{db_name}' created or already exists")
-            
-            # Switch to the database
-            cursor.execute(f"USE {db_name}")
-            
-            # Read and execute schema.sql
-            with open('schema.sql', 'r') as file:
-                # Split the file into individual statements
-                statements = file.read().split(';')
-                
-                # Execute each statement
-                for statement in statements:
-                    if statement.strip():
-                        try:
-                            # Handle DELIMITER statements
-                            if statement.strip().upper().startswith('DELIMITER'):
-                                continue  # Skip DELIMITER statements
-                            cursor.execute(statement)
-                        except Error as e:
-                            # Skip duplicate key errors
-                            if e.errno == 1061:  # Duplicate key error
-                                print(f"Skipping duplicate key: {e}")
-                                continue
-                            # Skip table exists error
-                            elif e.errno == 1050:  # Table exists error
-                                print(f"Table already exists: {e}")
-                                continue
-                            else:
-                                raise e
-            
-            print("Database setup completed successfully!")
-            
-            # Insert sample data
-            insert_sample_data(cursor)
-            
-            connection.commit()
-            
-    except Error as e:
-        print(f"Error: {e}")
-    finally:
-        if connection.is_connected():
-            cursor.close()
-            connection.close()
-            print("MySQL connection closed.")
+        cursor = conn.cursor()
 
-def insert_sample_data(cursor):
-    # Insert sample blood banks
-    blood_banks = [
-        ('City Hospital Blood Bank', '123 Main St, City', '555-0101', 'citybank@hospital.com'),
-        ('Regional Blood Center', '456 Health Ave, Town', '555-0102', 'regional@blood.com'),
-        ('Community Blood Services', '789 Care Blvd, Village', '555-0103', 'community@blood.com')
-    ]
-    
-    cursor.execute("SELECT COUNT(*) FROM blood_banks")
-    if cursor.fetchone()[0] == 0:
-        cursor.executemany("""
-            INSERT INTO blood_banks (name, address, contact_number, email)
-            VALUES (%s, %s, %s, %s)
-        """, blood_banks)
-        print("Sample blood banks inserted successfully!")
+        # Create database if it doesn't exist
+        cursor.execute("CREATE DATABASE IF NOT EXISTS blood_donation")
+        print("Database 'blood_donation' created or already exists")
+
+        # Switch to the database
+        cursor.execute("USE blood_donation")
+
+        # Drop existing tables to ensure clean schema
+        cursor.execute("DROP TABLE IF EXISTS transactions")
+        cursor.execute("DROP TABLE IF EXISTS blood_inventory")
+        cursor.execute("DROP TABLE IF EXISTS recipients")
+        cursor.execute("DROP TABLE IF EXISTS donors")
+        cursor.execute("DROP TABLE IF EXISTS blood_banks")
+
+        # Create recipients table first
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS recipients (
+                recipient_id INT PRIMARY KEY AUTO_INCREMENT,
+                name VARCHAR(100) NOT NULL,
+                age INT CHECK (age >= 0 AND age <= 120),
+                blood_group ENUM('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-') NOT NULL,
+                contact_number VARCHAR(15) NOT NULL,
+                hospital_name VARCHAR(100) NOT NULL,
+                hospital_address TEXT NOT NULL,
+                urgency_level ENUM('LOW', 'MEDIUM', 'HIGH', 'CRITICAL') NOT NULL,
+                units_needed INT NOT NULL,
+                status ENUM('PENDING', 'FULFILLED', 'CANCELLED') DEFAULT 'PENDING',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            )
+        """)
+
+        # Read and execute remaining schema.sql
+        with open('schema.sql', 'r') as file:
+            sql_commands = file.read()
+            for command in sql_commands.split(';'):
+                if command.strip() and 'CREATE TABLE IF NOT EXISTS recipients' not in command:
+                    try:
+                        cursor.execute(command)
+                    except mysql.connector.Error as err:
+                        if err.errno == 1061:  # Duplicate key error
+                            print(f"Skipping duplicate key: {err}")
+                        else:
+                            print(f"Error executing command: {err}")
+                            print(f"Command: {command}")
+
+        # Check if blood banks exist
+        cursor.execute("SELECT COUNT(*) FROM blood_banks")
+        count = cursor.fetchone()[0]
+        
+        if count == 0:
+            # Insert sample blood banks
+            sample_banks = [
+                ("City Hospital Blood Bank", "123 Main Street, City", "555-0101", "city@bloodbank.com"),
+                ("General Hospital Blood Center", "456 Health Avenue, Town", "555-0102", "general@bloodbank.com"),
+                ("Community Blood Services", "789 Care Road, Village", "555-0103", "community@bloodbank.com")
+            ]
+            cursor.executemany("""
+                INSERT INTO blood_banks (name, address, contact_number, email)
+                VALUES (%s, %s, %s, %s)
+            """, sample_banks)
+            print("Sample blood banks added successfully")
+
+        conn.commit()
+        print("Database setup completed successfully")
+
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+    finally:
+        if 'conn' in locals() and conn.is_connected():
+            cursor.close()
+            conn.close()
+            print("MySQL connection closed")
 
 if __name__ == "__main__":
     setup_database() 

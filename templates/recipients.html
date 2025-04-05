@@ -1,98 +1,51 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-4 mb-4">
+<div class="row mb-4">
+    <div class="col-md-12">
         <div class="card">
             <div class="card-header">
-                <h5 class="card-title mb-0">Add New Recipient</h5>
+                <h5 class="card-title mb-0">Blood Recipients</h5>
             </div>
             <div class="card-body">
-                <form method="POST">
-                    {{ form.csrf_token }}
-                    <div class="mb-3">
-                        {{ form.name.label(class="form-label") }}
-                        {{ form.name(class="form-control") }}
-                        {% if form.name.errors %}
-                            {% for error in form.name.errors %}
-                                <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        {% endif %}
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <form method="GET" class="row g-3">
+                            <div class="col-md-4">
+                                <select name="blood_group" class="form-select">
+                                    <option value="">All Blood Groups</option>
+                                    <option value="A+" {% if request.args.get('blood_group') == 'A+' %}selected{% endif %}>A+</option>
+                                    <option value="A-" {% if request.args.get('blood_group') == 'A-' %}selected{% endif %}>A-</option>
+                                    <option value="B+" {% if request.args.get('blood_group') == 'B+' %}selected{% endif %}>B+</option>
+                                    <option value="B-" {% if request.args.get('blood_group') == 'B-' %}selected{% endif %}>B-</option>
+                                    <option value="O+" {% if request.args.get('blood_group') == 'O+' %}selected{% endif %}>O+</option>
+                                    <option value="O-" {% if request.args.get('blood_group') == 'O-' %}selected{% endif %}>O-</option>
+                                    <option value="AB+" {% if request.args.get('blood_group') == 'AB+' %}selected{% endif %}>AB+</option>
+                                    <option value="AB-" {% if request.args.get('blood_group') == 'AB-' %}selected{% endif %}>AB-</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <select name="urgency_level" class="form-select">
+                                    <option value="">All Urgency Levels</option>
+                                    <option value="CRITICAL" {% if request.args.get('urgency_level') == 'CRITICAL' %}selected{% endif %}>Critical</option>
+                                    <option value="HIGH" {% if request.args.get('urgency_level') == 'HIGH' %}selected{% endif %}>High</option>
+                                    <option value="MEDIUM" {% if request.args.get('urgency_level') == 'MEDIUM' %}selected{% endif %}>Medium</option>
+                                    <option value="LOW" {% if request.args.get('urgency_level') == 'LOW' %}selected{% endif %}>Low</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-primary">Filter</button>
+                            </div>
+                        </form>
                     </div>
-                    <div class="mb-3">
-                        {{ form.age.label(class="form-label") }}
-                        {{ form.age(class="form-control") }}
-                        {% if form.age.errors %}
-                            {% for error in form.age.errors %}
-                                <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        {% endif %}
+                    <div class="col-md-6">
+                        <div class="d-flex justify-content-end">
+                            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addRecipientModal">
+                                Add Recipient
+                            </button>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        {{ form.blood_group.label(class="form-label") }}
-                        {{ form.blood_group(class="form-select") }}
-                        {% if form.blood_group.errors %}
-                            {% for error in form.blood_group.errors %}
-                                <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        {% endif %}
-                    </div>
-                    <div class="mb-3">
-                        {{ form.contact_number.label(class="form-label") }}
-                        {{ form.contact_number(class="form-control") }}
-                        {% if form.contact_number.errors %}
-                            {% for error in form.contact_number.errors %}
-                                <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        {% endif %}
-                    </div>
-                    <div class="mb-3">
-                        {{ form.email.label(class="form-label") }}
-                        {{ form.email(class="form-control") }}
-                        {% if form.email.errors %}
-                            {% for error in form.email.errors %}
-                                <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        {% endif %}
-                    </div>
-                    <div class="mb-3">
-                        {{ form.address.label(class="form-label") }}
-                        {{ form.address(class="form-control", rows=3) }}
-                        {% if form.address.errors %}
-                            {% for error in form.address.errors %}
-                                <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        {% endif %}
-                    </div>
-                    <div class="mb-3">
-                        {{ form.urgency_level.label(class="form-label") }}
-                        {{ form.urgency_level(class="form-select") }}
-                        {% if form.urgency_level.errors %}
-                            {% for error in form.urgency_level.errors %}
-                                <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        {% endif %}
-                    </div>
-                    <div class="mb-3">
-                        {{ form.units_needed.label(class="form-label") }}
-                        {{ form.units_needed(class="form-control") }}
-                        {% if form.units_needed.errors %}
-                            {% for error in form.units_needed.errors %}
-                                <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        {% endif %}
-                    </div>
-                    {{ form.submit(class="btn btn-primary w-100") }}
-                </form>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-8 mb-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Blood Requests</h5>
-            </div>
-            <div class="card-body">
+                </div>
                 <div class="table-responsive">
                     <table class="table table-striped">
                         <thead>
@@ -101,11 +54,11 @@
                                 <th>Age</th>
                                 <th>Blood Group</th>
                                 <th>Contact</th>
-                                <th>Email</th>
-                                <th>Address</th>
+                                <th>Hospital</th>
+                                <th>Units Needed</th>
                                 <th>Urgency</th>
-                                <th>Units</th>
                                 <th>Status</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -115,18 +68,26 @@
                                 <td>{{ recipient.age }}</td>
                                 <td>{{ recipient.blood_group }}</td>
                                 <td>{{ recipient.contact_number }}</td>
-                                <td>{{ recipient.email }}</td>
-                                <td>{{ recipient.address }}</td>
+                                <td>{{ recipient.hospital_name }}</td>
+                                <td>{{ recipient.units_needed }}</td>
                                 <td>
-                                    <span class="badge {% if recipient.urgency_level == 'High' %}bg-danger{% elif recipient.urgency_level == 'Medium' %}bg-warning{% else %}bg-info{% endif %}">
+                                    <span class="badge {% if recipient.urgency_level == 'CRITICAL' %}bg-danger
+                                                      {% elif recipient.urgency_level == 'HIGH' %}bg-warning
+                                                      {% elif recipient.urgency_level == 'MEDIUM' %}bg-info
+                                                      {% else %}bg-secondary{% endif %}">
                                         {{ recipient.urgency_level }}
                                     </span>
                                 </td>
-                                <td>{{ recipient.units_needed }}</td>
                                 <td>
-                                    <span class="badge {% if recipient.status == 'Pending' %}bg-warning{% elif recipient.status == 'Fulfilled' %}bg-success{% else %}bg-danger{% endif %}">
+                                    <span class="badge {% if recipient.status == 'PENDING' %}bg-warning
+                                                      {% elif recipient.status == 'FULFILLED' %}bg-success
+                                                      {% else %}bg-danger{% endif %}">
                                         {{ recipient.status }}
                                     </span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" onclick="editRecipient({{ recipient.recipient_id }})">Edit</button>
+                                    <button class="btn btn-sm btn-danger" onclick="deleteRecipient({{ recipient.recipient_id }})">Delete</button>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -137,4 +98,156 @@
         </div>
     </div>
 </div>
+
+<!-- Add Recipient Modal -->
+<div class="modal fade" id="addRecipientModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Recipient</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="{{ url_for('recipients') }}">
+                    {{ form.csrf_token }}
+                    <div class="mb-3">
+                        {{ form.name.label(class="form-label") }}
+                        {{ form.name(class="form-control") }}
+                        {% if form.name.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.name.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.age.label(class="form-label") }}
+                        {{ form.age(class="form-control") }}
+                        {% if form.age.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.age.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.blood_group.label(class="form-label") }}
+                        {{ form.blood_group(class="form-select") }}
+                        {% if form.blood_group.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.blood_group.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.contact_number.label(class="form-label") }}
+                        {{ form.contact_number(class="form-control") }}
+                        {% if form.contact_number.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.contact_number.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.hospital_name.label(class="form-label") }}
+                        {{ form.hospital_name(class="form-control") }}
+                        {% if form.hospital_name.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.hospital_name.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.hospital_address.label(class="form-label") }}
+                        {{ form.hospital_address(class="form-control") }}
+                        {% if form.hospital_address.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.hospital_address.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.units_needed.label(class="form-label") }}
+                        {{ form.units_needed(class="form-control") }}
+                        {% if form.units_needed.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.units_needed.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.urgency_level.label(class="form-label") }}
+                        {{ form.urgency_level(class="form-select") }}
+                        {% if form.urgency_level.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.urgency_level.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function editRecipient(id) {
+    fetch(`/api/recipients/${id}`)
+        .then(response => response.json())
+        .then(data => {
+            const form = document.getElementById('editRecipientForm');
+            form.action = `/recipients/${id}/edit`;
+            form.querySelector('[name="name"]').value = data.name;
+            form.querySelector('[name="age"]').value = data.age;
+            form.querySelector('[name="blood_group"]').value = data.blood_group;
+            form.querySelector('[name="contact_number"]').value = data.contact_number;
+            form.querySelector('[name="hospital_name"]').value = data.hospital_name;
+            form.querySelector('[name="hospital_address"]').value = data.hospital_address;
+            form.querySelector('[name="units_needed"]').value = data.units_needed;
+            form.querySelector('[name="urgency_level"]').value = data.urgency_level;
+            new bootstrap.Modal(document.getElementById('editRecipientModal')).show();
+        });
+}
+
+function deleteRecipient(id) {
+    if (confirm('Are you sure you want to delete this recipient?')) {
+        fetch(`/recipients/${id}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name="csrf_token"]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error deleting recipient: ' + data.error);
+            }
+        });
+    }
+}
+</script>
 {% endblock %} 
