@@ -6,6 +6,7 @@ import mysql.connector
 from datetime import datetime
 import os
 from dotenv import load_dotenv
+from blood_matching import find_compatible_donors, find_matching_recipients, check_blood_compatibility
 
 
 load_dotenv()
@@ -449,6 +450,165 @@ def reports():
                          monthly_donations=[item['count'] for item in monthly_donations],
                          recent_transactions=recent_transactions,
                          blood_bank_stats=blood_bank_stats)
+
+@app.route('/recipients/<int:id>/find_donors')
+def find_donors_for_recipient(id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
+        # Get recipient details
+        cursor.execute("""
+            SELECT recipient_id, name, blood_group, hospital_address, urgency_level, units_needed
+            FROM recipients
+            WHERE recipient_id = %s
+        """, (id,))
+        recipient = cursor.fetchone()
+        
+        if not recipient:
+            flash('Recipient not found!', 'error')
+            return redirect(url_for('recipients'))
+        
+        # Find compatible donors
+        compatible_donors = find_compatible_donors(
+            cursor,
+            recipient['blood_group'],
+            recipient['hospital_address']
+        )
+        
+        return render_template(
+            'matching.html',
+            recipient=recipient,
+            compatible_donors=compatible_donors,
+            title=f"Compatible Donors for {recipient['name']}"
+        )
+    except Exception as e:
+        flash(f'Error finding compatible donors: {str(e)}', 'error')
+        return redirect(url_for('recipients'))
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/donors/<int:id>/find_recipients')
+def find_recipients_for_donor(id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
+        # Get donor details
+        cursor.execute("""
+            SELECT donor_id, name, blood_group, address
+            FROM donors
+            WHERE donor_id = %s
+        """, (id,))
+        donor = cursor.fetchone()
+        
+        if not donor:
+            flash('Donor not found!', 'error')
+            return redirect(url_for('donors'))
+        
+        # Find compatible recipients
+        compatible_recipients = find_matching_recipients(
+            cursor,
+            donor['blood_group'],
+            donor['address']
+        )
+        
+        return render_template(
+            'matching.html',
+            donor=donor,
+            compatible_recipients=compatible_recipients,
+            title=f"Compatible Recipients for {donor['name']}"
+        )
+    except Exception as e:
+        flash(f'Error finding compatible recipients: {str(e)}', 'error')
+        return redirect(url_for('donors'))
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/api/check_compatibility', methods=['POST'])
+def api_check_compatibility():
+    donor_blood_group = request.json.get('donor_blood_group')
+    recipient_blood_group = request.json.get('recipient_blood_group')
+    
+    if not donor_blood_group or not recipient_blood_group:
+        return jsonify({
+            'success': False,
+            'error': 'Both donor and recipient blood groups are required'
+        })
+    
+    is_compatible = check_blood_compatibility(donor_blood_group, recipient_blood_group)
+    
+    return jsonify({
+        'success': True,
+        'is_compatible': is_compatible,
+        'compatible_groups': get_compatible_blood_groups(recipient_blood_group)
+    })
+
+@app.route('/api/contact_donor', methods=['POST'])
+def contact_donor():
+    try:
+        data = request.get_json()
+        donor_id = data.get('donor_id')
+        recipient_id = data.get('recipient_id')
+        message = data.get('message')
+
+        if not all([donor_id, recipient_id, message]):
+            return jsonify({'success': False, 'error': 'Missing required fields'})
+
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Insert the communication record
+        cursor.execute("""
+            INSERT INTO communications (donor_id, recipient_id, message)
+            VALUES (%s, %s, %s)
+        """, (donor_id, recipient_id, message))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        return jsonify({
+            'success': True,
+            'message': 'Communication initiated successfully'
+        })
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/contact_recipient', methods=['POST'])
+def contact_recipient():
+    try:
+        data = request.get_json()
+        donor_id = data.get('donor_id')
+        recipient_id = data.get('recipient_id')
+        message = data.get('message')
+
+        if not all([donor_id, recipient_id, message]):
+            return jsonify({'success': False, 'error': 'Missing required fields'})
+
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Insert the communication record
+        cursor.execute("""
+            INSERT INTO communications (donor_id, recipient_id, message)
+            VALUES (%s, %s, %s)
+        """, (donor_id, recipient_id, message))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        return jsonify({
+            'success': True,
+            'message': 'Communication initiated successfully'
+        })
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
 
 if __name__ == '__main__':
     app.run(debug=True) 

@@ -1,114 +1,173 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-4 mb-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Add New Donor</h5>
-            </div>
-            <div class="card-body">
-                <form method="POST">
-                    {{ form.csrf_token }}
-                    <div class="mb-3">
-                        {{ form.name.label(class="form-label") }}
-                        {{ form.name(class="form-control") }}
-                        {% if form.name.errors %}
-                            {% for error in form.name.errors %}
-                                <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        {% endif %}
+<div class="container mt-4">
+    <h2>Donor Management</h2>
+    
+    <!-- Add Donor Form -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>Add New Donor</h4>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                {{ form.csrf_token }}
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            {{ form.name.label(class="form-label") }}
+                            {{ form.name(class="form-control") }}
+                            {% if form.name.errors %}
+                            <div class="text-danger">
+                                {% for error in form.name.errors %}
+                                <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.age.label(class="form-label") }}
+                            {{ form.age(class="form-control") }}
+                            {% if form.age.errors %}
+                            <div class="text-danger">
+                                {% for error in form.age.errors %}
+                                <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.blood_group.label(class="form-label") }}
+                            {{ form.blood_group(class="form-control") }}
+                            {% if form.blood_group.errors %}
+                            <div class="text-danger">
+                                {% for error in form.blood_group.errors %}
+                                <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        {{ form.age.label(class="form-label") }}
-                        {{ form.age(class="form-control") }}
-                        {% if form.age.errors %}
-                            {% for error in form.age.errors %}
-                                <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        {% endif %}
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            {{ form.contact_number.label(class="form-label") }}
+                            {{ form.contact_number(class="form-control") }}
+                            {% if form.contact_number.errors %}
+                            <div class="text-danger">
+                                {% for error in form.contact_number.errors %}
+                                <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.email.label(class="form-label") }}
+                            {{ form.email(class="form-control") }}
+                            {% if form.email.errors %}
+                            <div class="text-danger">
+                                {% for error in form.email.errors %}
+                                <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.address.label(class="form-label") }}
+                            {{ form.address(class="form-control", rows="3") }}
+                            {% if form.address.errors %}
+                            <div class="text-danger">
+                                {% for error in form.address.errors %}
+                                <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        {{ form.blood_group.label(class="form-label") }}
-                        {{ form.blood_group(class="form-select") }}
-                        {% if form.blood_group.errors %}
-                            {% for error in form.blood_group.errors %}
-                                <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        {% endif %}
-                    </div>
-                    <div class="mb-3">
-                        {{ form.contact_number.label(class="form-label") }}
-                        {{ form.contact_number(class="form-control") }}
-                        {% if form.contact_number.errors %}
-                            {% for error in form.contact_number.errors %}
-                                <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        {% endif %}
-                    </div>
-                    <div class="mb-3">
-                        {{ form.email.label(class="form-label") }}
-                        {{ form.email(class="form-control") }}
-                        {% if form.email.errors %}
-                            {% for error in form.email.errors %}
-                                <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        {% endif %}
-                    </div>
-                    <div class="mb-3">
-                        {{ form.address.label(class="form-label") }}
-                        {{ form.address(class="form-control", rows=3) }}
-                        {% if form.address.errors %}
-                            {% for error in form.address.errors %}
-                                <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        {% endif %}
-                    </div>
-                    {{ form.submit(class="btn btn-primary w-100") }}
-                </form>
-            </div>
+                </div>
+                {{ form.submit(class="btn btn-primary") }}
+            </form>
         </div>
     </div>
-    <div class="col-md-8 mb-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Registered Donors</h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Age</th>
-                                <th>Blood Group</th>
-                                <th>Contact</th>
-                                <th>Email</th>
-                                <th>Address</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for donor in donors %}
-                            <tr>
-                                <td>{{ donor.name }}</td>
-                                <td>{{ donor.age }}</td>
-                                <td>{{ donor.blood_group }}</td>
-                                <td>{{ donor.contact_number }}</td>
-                                <td>{{ donor.email }}</td>
-                                <td>{{ donor.address }}</td>
-                                <td>
-                                    <span class="badge {% if donor.is_available %}bg-success{% else %}bg-danger{% endif %}">
-                                        {{ "Available" if donor.is_available else "Unavailable" }}
-                                    </span>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+    
+    <!-- Donors List -->
+    <div class="card">
+        <div class="card-header">
+            <h4>Registered Donors</h4>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Age</th>
+                            <th>Blood Group</th>
+                            <th>Contact</th>
+                            <th>Location</th>
+                            <th>Last Donation</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for donor in donors %}
+                        <tr>
+                            <td>{{ donor.name }}</td>
+                            <td>{{ donor.age }}</td>
+                            <td>{{ donor.blood_group }}</td>
+                            <td>
+                                {{ donor.contact_number }}<br>
+                                <small class="text-muted">{{ donor.email }}</small>
+                            </td>
+                            <td>{{ donor.address }}</td>
+                            <td>
+                                {% if donor.last_donation_date %}
+                                    {{ donor.last_donation_date.strftime('%Y-%m-%d') }}
+                                {% else %}
+                                    Never
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if donor.is_available %}
+                                    <span class="badge bg-success">Available</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Unavailable</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('find_recipients_for_donor', id=donor.donor_id) }}" 
+                                       class="btn btn-sm btn-info">
+                                        Find Matches
+                                    </a>
+                                    <button class="btn btn-sm btn-primary" onclick="editDonor('{{ donor.donor_id }}')">
+                                        Edit
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" onclick="deleteDonor('{{ donor.donor_id }}')">
+                                        Delete
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+function editDonor(donorId) {
+    // Implement edit functionality
+    alert('Edit functionality will be implemented here');
+}
+
+function deleteDonor(donorId) {
+    if (confirm('Are you sure you want to delete this donor?')) {
+        // Implement delete functionality
+        alert('Delete functionality will be implemented here');
+    }
+}
+</script>
 {% endblock %} 

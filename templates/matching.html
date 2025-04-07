@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>{{ title }}</h2>
+    
+    {% if recipient %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>Recipient Details</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Name:</strong> {{ recipient.name }}</p>
+                    <p><strong>Blood Group:</strong> {{ recipient.blood_group }}</p>
+                    <p><strong>Hospital:</strong> {{ recipient.hospital_name }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Units Needed:</strong> {{ recipient.units_needed }}</p>
+                    <p><strong>Urgency Level:</strong> 
+                        <span class="badge {% if recipient.urgency_level == 'CRITICAL' %}bg-danger
+                                         {% elif recipient.urgency_level == 'HIGH' %}bg-warning
+                                         {% elif recipient.urgency_level == 'MEDIUM' %}bg-info
+                                         {% else %}bg-success{% endif %}">
+                            {{ recipient.urgency_level }}
+                        </span>
+                    </p>
+                    <p><strong>Hospital Address:</strong> {{ recipient.hospital_address }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3>Compatible Donors</h3>
+    {% if compatible_donors %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Blood Group</th>
+                    <th>Contact</th>
+                    <th>Location</th>
+                    <th>Last Donation</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for donor in compatible_donors %}
+                <tr>
+                    <td>{{ donor.name }}</td>
+                    <td>{{ donor.blood_group }}</td>
+                    <td>
+                        {{ donor.contact_number }}<br>
+                        <small class="text-muted">{{ donor.email }}</small>
+                    </td>
+                    <td>{{ donor.address }}</td>
+                    <td>
+                        {% if donor.last_donation_date %}
+                            {{ donor.last_donation_date.strftime('%Y-%m-%d') }}
+                            <br>
+                            <small class="text-muted">
+                                {{ donor.days_since_last_donation }} days ago
+                            </small>
+                        {% else %}
+                            Never
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if donor.is_available %}
+                            <span class="badge bg-success">Available</span>
+                        {% else %}
+                            <span class="badge bg-danger">Unavailable</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="contactDonor('{{ donor.donor_id }}')">
+                            Contact
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        No compatible donors found at this time.
+    </div>
+    {% endif %}
+
+    {% elif donor %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>Donor Details</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Name:</strong> {{ donor.name }}</p>
+                    <p><strong>Blood Group:</strong> {{ donor.blood_group }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Location:</strong> {{ donor.address }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3>Compatible Recipients</h3>
+    {% if compatible_recipients %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Blood Group</th>
+                    <th>Hospital</th>
+                    <th>Units Needed</th>
+                    <th>Urgency</th>
+                    <th>Contact</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for recipient in compatible_recipients %}
+                <tr>
+                    <td>{{ recipient.name }}</td>
+                    <td>{{ recipient.blood_group }}</td>
+                    <td>
+                        {{ recipient.hospital_name }}<br>
+                        <small class="text-muted">{{ recipient.hospital_address }}</small>
+                    </td>
+                    <td>{{ recipient.units_needed }}</td>
+                    <td>
+                        <span class="badge {% if recipient.urgency_level == 'CRITICAL' %}bg-danger
+                                         {% elif recipient.urgency_level == 'HIGH' %}bg-warning
+                                         {% elif recipient.urgency_level == 'MEDIUM' %}bg-info
+                                         {% else %}bg-success{% endif %}">
+                            {{ recipient.urgency_level }}
+                        </span>
+                    </td>
+                    <td>{{ recipient.contact_number }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="contactRecipient('{{ recipient.recipient_id }}')">
+                            Contact
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        No compatible recipients found at this time.
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
+
+<!-- Contact Modal -->
+<div class="modal fade" id="contactModal" tabindex="-1" aria-labelledby="contactModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="contactModalLabel">Send Message</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="contactForm">
+                    <input type="hidden" id="contactType" name="contactType">
+                    <input type="hidden" id="donorId" name="donorId">
+                    <input type="hidden" id="recipientId" name="recipientId">
+                    <div class="mb-3">
+                        <label for="message" class="form-label">Message</label>
+                        <textarea class="form-control" id="message" name="message" rows="4" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="sendMessage()">Send Message</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function contactDonor(donorId) {
+    document.getElementById('contactType').value = 'donor';
+    document.getElementById('donorId').value = donorId;
+    document.getElementById('recipientId').value = '{{ recipient.recipient_id if recipient else "" }}';
+    document.getElementById('contactModalLabel').textContent = 'Contact Donor';
+    document.getElementById('message').value = '';
+    new bootstrap.Modal(document.getElementById('contactModal')).show();
+}
+
+function contactRecipient(recipientId) {
+    document.getElementById('contactType').value = 'recipient';
+    document.getElementById('donorId').value = '{{ donor.donor_id if donor else "" }}';
+    document.getElementById('recipientId').value = recipientId;
+    document.getElementById('contactModalLabel').textContent = 'Contact Recipient';
+    document.getElementById('message').value = '';
+    new bootstrap.Modal(document.getElementById('contactModal')).show();
+}
+
+function sendMessage() {
+    const contactType = document.getElementById('contactType').value;
+    const donorId = document.getElementById('donorId').value;
+    const recipientId = document.getElementById('recipientId').value;
+    const message = document.getElementById('message').value;
+
+    if (!message.trim()) {
+        alert('Please enter a message');
+        return;
+    }
+
+    const endpoint = contactType === 'donor' ? '/api/contact_donor' : '/api/contact_recipient';
+    
+    fetch(endpoint, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            donor_id: donorId,
+            recipient_id: recipientId,
+            message: message
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Message sent successfully!');
+            bootstrap.Modal.getInstance(document.getElementById('contactModal')).hide();
+        } else {
+            alert('Error sending message: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error sending message: ' + error);
+    });
+}
+</script>
+{% endblock %} 

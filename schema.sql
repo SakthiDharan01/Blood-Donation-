@@ -69,12 +69,27 @@ CREATE TABLE IF NOT EXISTS transactions (
     FOREIGN KEY (bank_id) REFERENCES blood_banks(bank_id) ON DELETE CASCADE
 );
 
+-- Create communications table
+CREATE TABLE IF NOT EXISTS communications (
+    communication_id INT AUTO_INCREMENT PRIMARY KEY,
+    donor_id INT,
+    recipient_id INT,
+    message TEXT NOT NULL,
+    status ENUM('PENDING', 'SENT', 'READ', 'REPLIED') DEFAULT 'PENDING',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (donor_id) REFERENCES donors(donor_id) ON DELETE SET NULL,
+    FOREIGN KEY (recipient_id) REFERENCES recipients(recipient_id) ON DELETE SET NULL
+);
+
 -- Create indexes for better performance
 CREATE INDEX idx_donor_blood_group ON donors(blood_group);
 CREATE INDEX idx_donor_location ON donors(address(100));
 CREATE INDEX idx_recipient_blood_group ON recipients(blood_group);
 CREATE INDEX idx_recipient_urgency ON recipients(urgency_level);
 CREATE INDEX idx_inventory_blood_group ON blood_inventory(blood_group);
+CREATE INDEX idx_communications_donor ON communications(donor_id);
+CREATE INDEX idx_communications_recipient ON communications(recipient_id);
 
 -- Create view for available blood types at each location
 CREATE OR REPLACE VIEW blood_bank_inventory_view AS
